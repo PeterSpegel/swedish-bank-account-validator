@@ -4,7 +4,7 @@
     "keywords": ["swedish bank account", "bankgiro", "autogiro", "validation"],
     "homepage": "https://github.com/olanorlander/swedish-bank-account-validator",
     "license": "MIT",
-    "version": "1.1",
+    "version": "1.1.1",
     "authors": [
         {
             "name": "Ola Norlander",
