@@ -5,13 +5,18 @@ namespace SwedishBankAccountValidator;
 class BankAccountValidator
 {
     /**
-     * @param $string
-     * @return SerialNumberValidator
+     * @param string $clearingNumberString
+     * @param string $serialNumberString
+     * @return ValidatorResult
      */
-    public static function withClearingNumber($string)
+    public static function withAccount($clearingNumberString, $serialNumberString = null)
     {
-        $clearingNumber = new ClearingNumber($string);
+        $validatorResult = ClearingNumber::validate($clearingNumberString);
+        if ($validatorResult->hasError()) {
+            return $validatorResult;
+        }
+        $clearingNumber = new ClearingNumber($clearingNumberString);
         $bank = Bank::requireInstanceByClearingNumber($clearingNumber);
-        return new SerialNumberValidator($bank);
+        return $bank->validateSerialNumber($serialNumberString);
     }
 }

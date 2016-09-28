@@ -1,11 +1,7 @@
 <?php
-
 namespace SwedishBankAccountValidator;
 
 use PHPUnit_Framework_TestCase;
-use SwedishBankAccountValidator\Exception\InvalidChecksumException;
-use SwedishBankAccountValidator\Exception\InvalidSerialNumberFormatException;
-use SwedishBankAccountValidator\Exception\InvalidSwedbankChecksumException;
 
 class BankAccountValidatorTest extends PHPUnit_Framework_TestCase
 {
@@ -17,9 +13,9 @@ class BankAccountValidatorTest extends PHPUnit_Framework_TestCase
      */
     public function test_validating_valid_account_numbers($bankName, $clearingNumber, $serialNumber)
     {
-        $result = BankAccountValidator::withClearingNumber($clearingNumber)
-            ->withSerialNumber($serialNumber);
+        $result = BankAccountValidator::withAccount($clearingNumber, $serialNumber);
 
+        $this->assertFalse($result->hasError());
         $this->assertEquals($bankName, $result->getBankName());
         $this->assertEquals($clearingNumber, $result->getClearingNumber());
         $this->assertEquals($serialNumber, $result->getSerialNumber());
@@ -43,9 +39,9 @@ class BankAccountValidatorTest extends PHPUnit_Framework_TestCase
      */
     public function test_that_invalid_account_numbers_throws_exception($clearingNumber, $accountNumber)
     {
-        $this->setExpectedException(InvalidSerialNumberFormatException::class);
-        BankAccountValidator::withClearingNumber($clearingNumber)
-            ->withSerialNumber($accountNumber);
+        $result = BankAccountValidator::withAccount($clearingNumber, $accountNumber);
+        $this->assertTrue($result->hasError());
+        $this->assertTrue($result->hasInvalidSerialNumberFormat());
     }
 
     public function invalidAccountNumberProvider()
@@ -62,7 +58,9 @@ class BankAccountValidatorTest extends PHPUnit_Framework_TestCase
 
     public function test_that_invalid_checksum_for_swedbank_throws_disclamer()
     {
-        $this->setExpectedExceptionRegExp(InvalidSwedbankChecksumException::class);
-        BankAccountValidator::withClearingNumber('8001')->withSerialNumber('123');
+        $result = BankAccountValidator::withAccount('8001', '123');
+        $this->assertTrue($result->hasError());
+        $this->assertTrue($result->hasInvalidSwedbankChecksum());
+        $this->assertTrue($result->hasInvalidChecksum());
     }
 }

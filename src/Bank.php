@@ -1,10 +1,5 @@
 <?php
-
 namespace SwedishBankAccountValidator;
-
-use SwedishBankAccountValidator\Exception\InvalidChecksumException;
-use SwedishBankAccountValidator\Exception\InvalidSerialNumberFormatException;
-use SwedishBankAccountValidator\Exception\InvalidSwedbankChecksumException;
 
 class Bank
 {
@@ -73,27 +68,27 @@ class Bank
      */
     public function validateSerialNumber($serialNumber)
     {
+        $validatorResult = new ValidatorResult($this->getBankName(), $this->getClearingNumber(), $serialNumber);
         if (in_array($this->accountType, [
             ClearingNumberRange::ACCOUNT_TYPE_1_1,
             ClearingNumberRange::ACCOUNT_TYPE_1_2])
         ) {
-            $this->guardAgainstInvalidType1SerialNumber($this->clearingNumber, $serialNumber);
+            $this->validateType1SerialNumber($validatorResult, $this->clearingNumber, $serialNumber);
             $number = $this->clearingNumber . $serialNumber;
             $number = $this->accountType == ClearingNumberRange::ACCOUNT_TYPE_1_1 ?
                 substr($number, 1) : $number;
-            $this->guardAgainstInvalidChecksum(11, $number);
+            $this->validateChecksum($validatorResult, 11, $number);
         } elseif ($this->accountType == ClearingNumberRange::ACCOUNT_TYPE_2_1) {
-            $this->guardAgainstInvalidType21SerialNumber($serialNumber);
-            $this->guardAgainstInvalidChecksum(10, $serialNumber);
+            $this->validateType21SerialNumber($validatorResult, $serialNumber);
+            $this->validateChecksum($validatorResult, 10, $serialNumber);
         } elseif ($this->accountType == ClearingNumberRange::ACCOUNT_TYPE_2_2) {
-            $this->guardAgainstInvalidType22SerialNumber($serialNumber);
-            $this->guardAgainstInvalidChecksum(11, $serialNumber);
+            $this->validateType22SerialNumber($validatorResult, $serialNumber);
+            $this->validateChecksum($validatorResult, 11, $serialNumber);
         } elseif ($this->accountType == ClearingNumberRange::ACCOUNT_TYPE_2_3) {
-            $this->guardAgainstInvalidType23SerialNumber($serialNumber);
-            $this->guardAgainstInvalidChecksum(10, substr($serialNumber, -10));
+            $this->validateType23SerialNumber($validatorResult, $serialNumber);
+            $this->validateChecksum($validatorResult, 10, substr($serialNumber, -10));
         }
-
-        return true;
+        return $validatorResult;
     }
 
     /**
@@ -112,60 +107,108 @@ class Bank
         return $this->clearingNumber;
     }
 
-    private function guardAgainstInvalidType1SerialNumber(ClearingNumber $clearingNumber, $serialNumber)
-    {
+    /**
+     * @param ValidatorResult $validatorResult
+     * @param ClearingNumber $clearingNumber
+     * @param string $serialNumber
+     */
+    private function validateType1SerialNumber(
+        ValidatorResult $validatorResult,
+        ClearingNumber $clearingNumber,
+        $serialNumber
+    ) {
+        if ($validatorResult->hasError()) {
+            return;
+        }
         $merged = $clearingNumber . $serialNumber;
         if (!preg_match('/^\d{11}$/', $merged)) {
-            throw new InvalidSerialNumberFormatException(
-                "Clearing-number and serial-number should be exactly 11 digits: '$merged'"
-            );
+            $validatorResult
+                ->setInvalidSerialNumberFormat()
+                ->setSwedishErrorMessage("Clearingnumret och kontonumret måste vara exakt 11 siffror: '$merged'")
+                ->setEnglishErrorMessage("Clearing-number and serial-number should be exactly 11 digits: '$merged'");
         }
     }
 
-    private function guardAgainstInvalidType21SerialNumber($serialNumber)
+    /**
+     * @param ValidatorResult $validatorResult
+     * @param string $serialNumber
+     */
+    private function validateType21SerialNumber(ValidatorResult $validatorResult, $serialNumber)
     {
+        if ($validatorResult->hasError()) {
+            return;
+        }
         if (!preg_match('/^\d{10}$/', $serialNumber)) {
-            throw new InvalidSerialNumberFormatException(
-                "Serial-number should be exactly 10 digits: '$serialNumber'"
-            );
+            $validatorResult
+                ->setInvalidSerialNumberFormat()
+                ->setSwedishErrorMessage("Kontonumret måste vara exakt 10 siffror: '$serialNumber'")
+                ->setEnglishErrorMessage("Serial-number should be exactly 10 digits: '$serialNumber'");
         }
     }
 
-    private function guardAgainstInvalidType22SerialNumber($serialNumber)
+    /**
+     * @param ValidatorResult $validatorResult
+     * @param string $serialNumber
+     */
+    private function validateType22SerialNumber(ValidatorResult $validatorResult, $serialNumber)
     {
+        if ($validatorResult->hasError()) {
+            return;
+        }
         if (!preg_match('/^\d{9}$/', $serialNumber)) {
-            throw new InvalidSerialNumberFormatException(
-                "Serial-number should be exactly 9 digits: '$serialNumber'"
-            );
+            $validatorResult
+                ->setInvalidSerialNumberFormat()
+                ->setSwedishErrorMessage("Kontonumret måste vara exakt 9 siffror: '$serialNumber'")
+                ->setEnglishErrorMessage("Serial-number should be exactly 9 digits: '$serialNumber'");
         }
     }
 
-    private function guardAgainstInvalidType23SerialNumber($serialNumber)
+    /**
+     * @param ValidatorResult $validatorResult
+     * @param string $serialNumber
+     */
+    private function validateType23SerialNumber(ValidatorResult $validatorResult, $serialNumber)
     {
+        if ($validatorResult->hasError()) {
+            return;
+        }
         if (!preg_match('/^\d{1,10}$/', $serialNumber)) {
-            throw new InvalidSerialNumberFormatException(
-                "Serial-number should be maximum 10 digits: '$serialNumber'"
-            );
+            $validatorResult
+                ->setInvalidSerialNumberFormat()
+                ->setSwedishErrorMessage("Kontonumret får inte vara längre än 10 siffror: '$serialNumber'")
+                ->setEnglishErrorMessage("Serial-number should be no longer than 10 digits: '$serialNumber'");
         }
     }
 
-    private function guardAgainstInvalidChecksum($modulus, $number)
+    private function validateChecksum(ValidatorResult $validatorResult, $modulus, $number)
     {
-        if ($modulus == 10 && ModulusCalculator::verifyMod10Checksum($number)) {
-            return true;
+        if ($validatorResult->hasError()) {
+            return;
         }
-
+        if ($modulus == 10 && ModulusCalculator::verifyMod10Checksum($number)) {
+            return;
+        }
         if ($modulus == 11 && ModulusCalculator::verifyMod11Checksum($number)) {
-            return true;
+            return;
         }
 
         if ($this->bankName == Bank::SWEDBANK) {
-            throw new InvalidSwedbankChecksumException(
-                "Incorrect checksum for number: $number" . PHP_EOL .
-                "However, in rare cases Swedbank account number with bad checksum do exists."
-            );
+            $validatorResult
+                ->setIsInvalidSwedbankChecksum()
+                ->setSwedishErrorMessage(
+                    "Ogiltig checksumma för konto: $number" . PHP_EOL .
+                    "I sällsynta fall kan dock Swedbanks kontonummer ha en dålig checksumma."
+                )
+                ->setEnglishErrorMessage(
+                    "Incorrect checksum for number: $number" . PHP_EOL .
+                    "However, in rare cases Swedbank account number with bad checksum do exists."
+                );
+            return;
         }
 
-        throw new InvalidChecksumException("Incorrect checksum for number: $number");
+        $validatorResult
+            ->setInvalidChecksum()
+            ->setSwedishErrorMessage("Ogiltig checksumma för konto: $number")
+            ->setEnglishErrorMessage("Incorrect checksum for number: $number");
     }
 }

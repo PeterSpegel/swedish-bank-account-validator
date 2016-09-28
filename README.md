@@ -14,47 +14,46 @@ The logic of validating the accounts is based in the following document:
 [![Build Status](https://travis-ci.org/olanorlander/swedish-bank-account-validator.png)](https://travis-ci.org/olanorlander/swedish-bank-account-validator)
 
 ### Example
-First use a static method and send in the clearing-number as a parameter to fetch a "Serial Number Validator".
+Validation of clearing number only. The result object contains a number of functions to query for specific errors.
+It is also possible to get an error message in english or swedish.
 ```php
-try {
-    $serialNumberValidator = BankAccountValidator::withClearingNumber('9661');
-} catch (InvalidClearingNumberException $e) {
-    echo "Wrong clearing-number:" . $e->getMessage();
+$result = BankAccountValidator::withAccount('9661');
+if ($result->hasInvalidClearingNumber()) {
+    echo "Wrong clearing-number:" . $result->getEnglishErrorMessage();
 }
 ```
 
-Then use the "Serial Number Validator" and send the serial number as parameter.
+Validation of clearing and serial number. The hasError() function of the result object can be used to see if the
+account information is valid. The result object will contain at most one error.
 ```php
-try {
-    $result = $serialNumberValidator->withSerialNumber('1231236');
-} catch (InvalidSerialNumberFormatException $e) {
-    echo 'Invalid account format for "' . $serialNumberValidator->getBankName() . '": ' . $e->getMessage();
-} catch (InvalidChecksumException $e) {
-    echo 'Invalid checksum for "' . $serialNumberValidator->getBankName() . '": ' . $e->getMessage();
-}
-```
-There are some rare cases Swedbank account really exists but has a bad checksum. There a special exception
- for this.
-```php
-} catch (InvalidSwedbankChecksumException $e) {
-    echo 'Bad checksum but possibly correct for "' . $serialNumberValidator->getBankName() . '": ' . $e->getMessage();
+$result = BankAccountValidator::withAccount('9661', '1231236');
+if ($result->hasError()) {
+    echo 'The account information is invalid' . PHP_EOL;
+    if ($result->hasInvalidSerialNumberFormat()) {
+        echo 'Invalid account format for "' . $result->getBankName() . '": ' . $result->getEnglishErrorMessage();
+    } elseif ($result->hasInvalidChecksum()) {
+        echo 'Invalid checksum for "' . $result->getBankName() . '": ' . $result->getEnglishErrorMessage();
+    }
 }
 ```
 
-It's also possible to chain both methods
+In some rare cases actual Swedbank accounts has a bad checksum. The result object distinguishes between
+this and regular checksum errors.
 ```php
-BankAccountValidator::withClearingNumber('9661')->withSerialNumber('1231236');
+if ($result->hasInvalidSwedbankChecksum()) {
+    echo 'Bad checksum but possibly correct for "' . $result->getBankName() . '": ' . $result->getEnglishErrorMessage();
+} elseif ($result->hasInvalidChecksum()) {
+    echo 'Bad checksum for "' . $result->getBankName() . '": ' . $result->getEnglishErrorMessage();
+}
 ```
 
-If no exception were thrown the validator will return a ValidatorResponse indicating that the account is valid
+The result object contains helpful information about the validated account.
 ```php
-$serialNumberValidator = BankAccountValidator::withClearingNumber('9661');
-$result = $serialNumberValidator->withSerialNumber('1231236');
+$result = BankAccountValidator::withAccount('9661', '1231236');
 echo 'Valid account' . PHP_EOL;
 echo 'Bank: ' . $result->getBankName() . PHP_EOL;
 echo 'Clearingnr: ' . $result->getClearingNumber() . PHP_EOL;
 echo 'Serialnr: ' . $result->getSerialNumber() . PHP_EOL;
-
 ```
 
 ## System requirements
