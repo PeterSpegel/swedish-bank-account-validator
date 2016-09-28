@@ -31,12 +31,12 @@ class ClearingNumber
         if (!is_numeric($clearingNumberString)) {
             $validatorResult
                 ->setInvalidClearingNumber()
-                ->setSwedishErrorMessage("Clearingnumret är inte numeriskt: '$clearingNumberString'")
+                ->setSwedishErrorMessage("Clearingnumret Ã¤r inte numeriskt: '$clearingNumberString'")
                 ->setEnglishErrorMessage("The clearing-number is not numeric: '$clearingNumberString'");
         } elseif (!ClearingNumberRange::getInstance()->isSupportedClearingNumber($clearingNumberString)) {
             $validatorResult
                 ->setInvalidClearingNumber()
-                ->setSwedishErrorMessage("Clearingnumret stöds ej: '$clearingNumberString'")
+                ->setSwedishErrorMessage("Clearingnumret stÃ¶ds ej: '$clearingNumberString'")
                 ->setEnglishErrorMessage("Unsupported clearing-number: '$clearingNumberString'");
         }
         return $validatorResult;
