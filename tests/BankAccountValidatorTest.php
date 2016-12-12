@@ -24,8 +24,8 @@ class BankAccountValidatorTest extends PHPUnit_Framework_TestCase
     public function validAccountNumberProvider()
     {
         return [
-            'Account Number Type 1-1' => ['Forex Bank', '9449', '1231230'],
-            'Account Number Type 1-2' => ['Amfa Bank AB', '9661', '1231236'],
+            'Account Number Type 1-1' => ['Forex Bank', '9449', '94491231230'],
+            'Account Number Type 1-2' => ['Amfa Bank AB', '9661', '96611231236'],
             'Account Number Type 2-1' => ['Danske Bank', '9180', '1234567897'],
             'Account Number Type 2-2' => ['Handelsbanken', '6875', '123123127'],
             'Account Number Type 2-3' => ['Nordea/Plusgirot', '9960', '1231231232'],

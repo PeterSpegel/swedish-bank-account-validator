@@ -73,10 +73,9 @@ class Bank
             ClearingNumberRange::ACCOUNT_TYPE_1_1,
             ClearingNumberRange::ACCOUNT_TYPE_1_2])
         ) {
-            $this->validateType1SerialNumber($validatorResult, $this->clearingNumber, $serialNumber);
-            $number = $this->clearingNumber . $serialNumber;
+            $this->validateType1SerialNumber($validatorResult, $serialNumber);
             $number = $this->accountType == ClearingNumberRange::ACCOUNT_TYPE_1_1 ?
-                substr($number, 1) : $number;
+                substr($serialNumber, 1) : $serialNumber;
             $this->validateChecksum($validatorResult, 11, $number);
         } elseif ($this->accountType == ClearingNumberRange::ACCOUNT_TYPE_2_1) {
             $this->validateType21SerialNumber($validatorResult, $serialNumber);
@@ -114,7 +113,6 @@ class Bank
      */
     private function validateType1SerialNumber(
         ValidatorResult $validatorResult,
-        ClearingNumber $clearingNumber,
         $serialNumber
     ) {
         if ($validatorResult->hasError()) {
