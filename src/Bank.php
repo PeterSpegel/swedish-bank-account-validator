@@ -108,7 +108,6 @@ class Bank
 
     /**
      * @param ValidatorResult $validatorResult
-     * @param ClearingNumber $clearingNumber
      * @param string $serialNumber
      */
     private function validateType1SerialNumber(
@@ -118,12 +117,13 @@ class Bank
         if ($validatorResult->hasError()) {
             return;
         }
-        $merged = $clearingNumber . $serialNumber;
-        if (!preg_match('/^\d{11}$/', $merged)) {
+        if (!preg_match('/^\d{11}$/', $serialNumber)) {
             $validatorResult
                 ->setInvalidSerialNumberFormat()
-                ->setSwedishErrorMessage("Clearingnumret och kontonumret måste vara exakt 11 siffror: '$merged'")
-                ->setEnglishErrorMessage("Clearing-number and serial-number should be exactly 11 digits: '$merged'");
+                ->setSwedishErrorMessage("Clearingnumret och kontonumret måste vara exakt 11 siffror: '$serialNumber'")
+                ->setEnglishErrorMessage(
+                    "Clearing-number and serial-number should be exactly 11 digits: '$serialNumber'"
+                );
         }
     }
 
